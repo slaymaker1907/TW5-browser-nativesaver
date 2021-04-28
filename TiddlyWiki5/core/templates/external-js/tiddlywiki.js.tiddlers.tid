@@ -1,0 +1,5 @@
+title: $:/core/templates/tiddlywiki5.js/tiddlers
+
+`
+$tw.preloadTiddlerArray(`<$text text=<<jsontiddlers "[[$:/core]]">>/>`);
+`

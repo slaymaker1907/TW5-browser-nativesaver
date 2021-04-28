@@ -1,0 +1,6 @@
+title: $:/core/templates/exporters/JsonFile
+tags: $:/tags/Exporter
+description: {{$:/language/Exporters/JsonFile}}
+extension: .json
+
+<$macrocall $name="jsontiddlers" filter=<<exportFilter>> $output="text/raw"/>
