@@ -1,0 +1,12 @@
+{
+	"title": "$:/plugins/slaymaker1907/browser-nativesaver",
+	"name": "HTML Native File System Saver",
+	"description": "TW saver which saves to the file system using the File System Access API.",
+	"author": "Dyllon Gagnier",
+	"dependents": [],
+	"list": "",
+	"plugin-type": "plugin",
+	"source": "https://github.com/slaymaker1907/TW5-fsa-saver",
+	"version": "0.2.0",
+	"core-version": ">=5.0.8"
+}

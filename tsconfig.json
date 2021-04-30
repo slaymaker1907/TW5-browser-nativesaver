@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "lib": ["DOM", "ES2020"],
+        "target": "ES2017",
+        "outDir": "build",
+        "module": "None",
+        "noImplicitUseStrict": true,
+        "alwaysStrict": false
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+        "node_modules"
+    ],
+}

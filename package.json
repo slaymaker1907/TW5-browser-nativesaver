@@ -1,0 +1,25 @@
+{
+  "name": "tw5-fsa-saver",
+  "version": "0.2.0",
+  "description": "This project uses git-subtree to sync with TiddlyWiki 5 as described\r in https://www.atlassian.com/git/tutorials/git-subtree.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node ./build.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/slaymaker1907/TW5-fsa-saver.git"
+  },
+  "author": "Dyllon Gagnier",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/slaymaker1907/TW5-fsa-saver/issues"
+  },
+  "homepage": "https://github.com/slaymaker1907/TW5-fsa-saver#readme",
+  "devDependencies": {
+    "@types/wicg-file-system-access": "2020.9.1",
+    "mkdirp": "~1.0.4",
+    "typescript": "~4.2.4"
+  }
+}

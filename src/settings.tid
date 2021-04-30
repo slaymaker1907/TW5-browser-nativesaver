@@ -1,0 +1,8 @@
+title: $:/plugins/slaymaker1907/browser-nativesaver/settings
+tags: $:/tags/ControlPanel/Saving
+caption: HTML Native File System Saver
+
+<$checkbox tiddler="$:/plugins/slaymaker1907/browser-nativesaver/settings-data" field="enable-saver?" checked="yes" unchecked="no"
+    default="yes"> Enable saver?</$checkbox>
+
+<$checkbox tiddler="$:/plugins/slaymaker1907/browser-nativesaver/settings-data" field="enable-logging?" checked="yes" unchecked="no" default="no"> Enable debug logging?</$checkbox>
