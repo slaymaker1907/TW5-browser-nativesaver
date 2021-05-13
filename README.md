@@ -3,6 +3,9 @@
 If you just want to install the plugin, download [example-wiki.html](./example-wiki.html)
 and import into your wiki.
 
+Note that only the single file wiki is currently supported. Support for
+saving multiple versions is currently a WIP.
+
 # Updating TW5 Version
 
 This project uses git-subtree to sync with TiddlyWiki 5 as described
