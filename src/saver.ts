@@ -287,9 +287,6 @@ const getFileHandle = async () => {
         }
         logDebug("Successfully obtained RW permission on file object.");
 
-        const file = maybeFileHandle.getFile();
-        console.log(file);
-
         return maybeFileHandle;
     } catch (err) {
         logDebug("Could not get previous handle, must request a new one due to error: %o", err);
