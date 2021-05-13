@@ -15,3 +15,6 @@ caption: HTML Native File System Saver
 <$reveal type="match" state="$:/plugins/slaymaker1907/browser-nativesaver/settings-data!!save-style" text="single-file-version-backup">
     Wiki file name: <$edit-text tiddler="$:/plugins/slaymaker1907/browser-nativesaver/settings-data" field="wiki-file-name" />
 </$reveal>
+
+<!--- Hacky solution to clear database for the time being --->
+<button onclick="window.indexedDB.deleteDatabase('QqiTNHy4qkN9TtIYbd5i');">Reset file save location (requires reload)</button>

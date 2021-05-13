@@ -155,6 +155,8 @@ Error message and password prompt
 
 <li>$:/state/advancedsearch/currentTab</li>
 
+<li>$:/state/plugin-info--710742849-$:/plugins/slaymaker1907/browser-nativesaver</li>
+
 <li>$:/state/plugin-info--896887961-$:/plugins/slaymaker1907/browser-nativesaver</li>
 
 <li>$:/state/tab--1498284803</li>
@@ -10061,7 +10063,7 @@ Error message and password prompt
 <div title="$:/isEncrypted">
 <pre>no</pre>
 </div>
-<div author="Dyllon Gagnier" core-version="&gt;=5.0.8" dependents="" description="TW saver which saves to the file system using the File System Access API." list="" name="HTML Native File System Saver" plugin-type="plugin" source="https://github.com/slaymaker1907/TW5-fsa-saver" title="$:/plugins/slaymaker1907/browser-nativesaver" type="application/json" version="0.2.0">
+<div author="Dyllon Gagnier" core-version="&gt;=5.0.8" dependents="" description="TW saver which saves to the file system using the File System Access API." list="" name="HTML Native File System Saver" plugin-type="plugin" source="https://github.com/slaymaker1907/TW5-fsa-saver" title="$:/plugins/slaymaker1907/browser-nativesaver" type="application/json" version="0.3.0">
 <pre>{
     &quot;tiddlers&quot;: {
         &quot;$:/plugins/slaymaker1907/browser-nativesaver/saver.js&quot;: {
@@ -10079,7 +10081,7 @@ Error message and password prompt
             &quot;title&quot;: &quot;$:/plugins/slaymaker1907/browser-nativesaver/settings&quot;,
             &quot;tags&quot;: &quot;$:/tags/ControlPanel/Saving&quot;,
             &quot;caption&quot;: &quot;HTML Native File System Saver&quot;,
-            &quot;text&quot;: &quot;&lt;$checkbox tiddler=\&quot;$:/plugins/slaymaker1907/browser-nativesaver/settings-data\&quot; field=\&quot;enable-saver?\&quot; checked=\&quot;yes\&quot; unchecked=\&quot;no\&quot;\r\n    default=\&quot;yes\&quot;&gt; Enable saver?&lt;/$checkbox&gt;\n\n&lt;$checkbox tiddler=\&quot;$:/plugins/slaymaker1907/browser-nativesaver/settings-data\&quot; field=\&quot;enable-logging?\&quot; checked=\&quot;yes\&quot; unchecked=\&quot;no\&quot; default=\&quot;no\&quot;&gt; Enable debug logging?&lt;/$checkbox&gt;\n\n&lt;$select tiddler=\&quot;$:/plugins/slaymaker1907/browser-nativesaver/settings-data\&quot; field=\&quot;save-style\&quot; default=\&quot;single-file\&quot;&gt;\r\n    &lt;option value=\&quot;single-file\&quot;&gt;Single file&lt;/option&gt;\r\n    &lt;option value=\&quot;single-file-version-backup\&quot;&gt;Single file with versioned backups (all stored in a single directory)&lt;/option&gt;\r\n&lt;/$select&gt;\n\n&lt;$reveal type=\&quot;match\&quot; state=\&quot;$:/plugins/slaymaker1907/browser-nativesaver/settings-data!!save-style\&quot; text=\&quot;single-file-version-backup\&quot;&gt;\r\n    Wiki file name: &lt;$edit-text tiddler=\&quot;$:/plugins/slaymaker1907/browser-nativesaver/settings-data\&quot; field=\&quot;wiki-file-name\&quot; /&gt;\r\n&lt;/$reveal&gt;\r\n&quot;
+            &quot;text&quot;: &quot;&lt;$checkbox tiddler=\&quot;$:/plugins/slaymaker1907/browser-nativesaver/settings-data\&quot; field=\&quot;enable-saver?\&quot; checked=\&quot;yes\&quot; unchecked=\&quot;no\&quot;\r\n    default=\&quot;yes\&quot;&gt; Enable saver?&lt;/$checkbox&gt;\n\n&lt;$checkbox tiddler=\&quot;$:/plugins/slaymaker1907/browser-nativesaver/settings-data\&quot; field=\&quot;enable-logging?\&quot; checked=\&quot;yes\&quot; unchecked=\&quot;no\&quot; default=\&quot;no\&quot;&gt; Enable debug logging?&lt;/$checkbox&gt;\n\n&lt;$select tiddler=\&quot;$:/plugins/slaymaker1907/browser-nativesaver/settings-data\&quot; field=\&quot;save-style\&quot; default=\&quot;single-file\&quot;&gt;\r\n    &lt;option value=\&quot;single-file\&quot;&gt;Single file&lt;/option&gt;\r\n    &lt;option value=\&quot;single-file-version-backup\&quot;&gt;Single file with versioned backups (all stored in a single directory)&lt;/option&gt;\r\n&lt;/$select&gt;\n\n&lt;$reveal type=\&quot;match\&quot; state=\&quot;$:/plugins/slaymaker1907/browser-nativesaver/settings-data!!save-style\&quot; text=\&quot;single-file-version-backup\&quot;&gt;\r\n    Wiki file name: &lt;$edit-text tiddler=\&quot;$:/plugins/slaymaker1907/browser-nativesaver/settings-data\&quot; field=\&quot;wiki-file-name\&quot; /&gt;\r\n&lt;/$reveal&gt;\n\n&lt;!--- Hacky solution to clear database for the time being ---&gt;\r\n&lt;button onclick=\&quot;window.indexedDB.deleteDatabase('QqiTNHy4qkN9TtIYbd5i');\&quot;&gt;Reset file save location (requires reload)&lt;/button&gt;\r\n&quot;
         }
     }
 }</pre>
@@ -10089,6 +10091,9 @@ Error message and password prompt
 </div>
 <div created="20210513172621522" modified="20210513172621522" title="$:/state/advancedsearch/currentTab">
 <pre>$:/core/ui/AdvancedSearch/Filter</pre>
+</div>
+<div created="20210513175308554" modified="20210513175314487" title="$:/state/plugin-info--710742849-$:/plugins/slaymaker1907/browser-nativesaver">
+<pre>no</pre>
 </div>
 <div created="20210513172328846" modified="20210513172328846" title="$:/state/plugin-info--896887961-$:/plugins/slaymaker1907/browser-nativesaver">
 <pre>yes</pre>
@@ -10100,9 +10105,9 @@ Error message and password prompt
 <pre>$:/core/ui/ControlPanel/Info</pre>
 </div>
 <div title="$:/status/RequireReloadDueToPluginChange">
-<pre>no</pre>
+<pre>yes</pre>
 </div>
-<div created="20210513171907376" list="$:/ControlPanel InstallingPlugin" modified="20210513173615391" title="$:/StoryList">
+<div created="20210513175414335" list="$:/Import InstallingPlugin" modified="20210513175414335" title="$:/StoryList">
 <pre></pre>
 </div>
 <div author="JeremyRuston" core-version="&gt;=5.0.0" dependents="$:/themes/tiddlywiki/vanilla" description="Emphasises individual tiddlers" name="Snow White" plugin-priority="0" plugin-type="theme" title="$:/themes/tiddlywiki/snowwhite" type="application/json" version="5.1.23">
