@@ -6,3 +6,12 @@ caption: HTML Native File System Saver
     default="yes"> Enable saver?</$checkbox>
 
 <$checkbox tiddler="$:/plugins/slaymaker1907/browser-nativesaver/settings-data" field="enable-logging?" checked="yes" unchecked="no" default="no"> Enable debug logging?</$checkbox>
+
+<$select tiddler="$:/plugins/slaymaker1907/browser-nativesaver/settings-data" field="save-style" default="single-file">
+    <option value="single-file">Single file</option>
+    <option value="single-file-version-backup">Single file with versioned backups (all stored in a single directory)</option>
+</$select>
+
+<$reveal type="match" state="$:/plugins/slaymaker1907/browser-nativesaver/settings-data!!save-style" text="single-file-version-backup">
+    Wiki file name: <$edit-text tiddler="$:/plugins/slaymaker1907/browser-nativesaver/settings-data" field="wiki-file-name" />
+</$reveal>

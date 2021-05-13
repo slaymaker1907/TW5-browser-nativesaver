@@ -13,6 +13,27 @@ enum SaverCapability {
     Download = "download"
 }
 
+enum SaverStyle {
+    SingleFileVersionBackup = "single-file-version-backup",
+    SingleFile = "single-file"
+}
+
+function constructEnumPredicate<RuntimeT extends string, EnumClass extends {[key: string]: RuntimeT}>(enumClass: EnumClass): (maybeEnum: string) => maybeEnum is EnumClass[keyof EnumClass] {
+    const reverseMapping: {[key: string]: boolean} = {};
+
+    for (const enumVal in enumClass) {
+        const enumStr = enumClass[enumVal];
+        reverseMapping[enumStr] = true;
+    }
+
+    function result(maybeEnum: any): maybeEnum is EnumClass[keyof EnumClass] {
+        return !!reverseMapping[maybeEnum];
+    }
+
+    return result;
+}
+
+const isSaverStyle = constructEnumPredicate(SaverStyle);
 interface SaverInfo {
     name: string;
     priority: number;
@@ -47,6 +68,7 @@ const BASE_TIDDLER_PATH = `$:/plugins/${PLUGIN_NAME}`;
 const PLUGIN_SETTINGS_DATA = `${BASE_TIDDLER_PATH}/settings-data`
 const ENABLE_LOGGING_FIELD = "enable-logging?";
 const ENABLE_SAVER_FIELD = "enable-saver?";
+const SAVER_STYLE_FIELD = "save-style";
 const YES = "yes";
 const UNIQUE_PLUGIN_ID = "QqiTNHy4qkN9TtIYbd5i";
 
@@ -72,7 +94,23 @@ const setupLogging = (wiki: TWWiki) => {
 
 const isEnabled = (wiki: TWWiki) => {
     return wiki.getTiddler(PLUGIN_SETTINGS_DATA)!.getFieldString(ENABLE_SAVER_FIELD) === YES;
-}
+};
+
+function getSaverStyle(wiki: TWWiki): SaverStyle {
+    try {
+        const maybeSaverStyle = wiki.getTiddler(PLUGIN_SETTINGS_DATA)!.getFieldString(SAVER_STYLE_FIELD);
+        if (isSaverStyle(maybeSaverStyle)) {
+            return maybeSaverStyle;
+        } else {
+            logDebug("Input saver style [%s] is not recognized, using default of SingleFile.", maybeSaverStyle);
+            return SaverStyle.SingleFile;
+        }
+    } catch(err) {
+        console.error("Error checking if versioning is enabled, using single file style.");
+        console.error(err);
+        return SaverStyle.SingleFile;
+    }
+};
 
 const isServedFromFS = () => {
     try {

@@ -2,12 +2,14 @@ const fs = require("fs/promises");
 const path = require("path");
 const mkdirp = require("mkdirp");
 const { spawn } = require("child_process");
+const toml = require('@ltd/j-toml');
 
 const SRC_DIR = path.join(__dirname, "src");
 const TW5_DIR = path.join(__dirname, "TiddlyWiki5");
 const PLUGIN_DIR = path.join(TW5_DIR, "plugins", "slaymaker1907", "browser-nativesaver");
 const BUILD_DIR = path.join(__dirname, "build");
 const TW5_COM_DIR = path.join(TW5_DIR, "editions", "tw5.com");
+const LOCAL_CONFIG = path.join(__dirname, "local-config.toml");
 
 async function moveTiddler(tiddler) {
     await fs.copyFile(path.join(SRC_DIR, tiddler), path.join(PLUGIN_DIR, tiddler));
@@ -27,12 +29,13 @@ async function movePlainTiddlers(createPluginDirPromise) {
 function runBuildCmd(cmd, args = [], opts = {}) {
     const inherit = "inherit";
     const ourOpts = {
+        cwd: __dirname,
         stdio: [
             inherit,
             inherit,
             inherit
         ],
-        windowsHide: false,
+        windowsHide: true,
         ...opts
     };
 
@@ -62,11 +65,77 @@ function runBuildCmd(cmd, args = [], opts = {}) {
     });
 }
 
-async function compileTypescript() {
-    await mkdirp(BUILD_DIR);
+// This function should never throw an exception.
+async function getTscCmd() {
+    console.log("Determining what command for tsc should be.");
+    const getDefaultTsc = () => {
+        try {
+            const platform = process.platform;
+            const result = platform === "win32" ? "tsc.cmd" : "tsc";
+            console.log(`Using default tsc command [${result}] for platform [${platform}].`);
+            return result;
+        } catch (err) {
+            console.error("Error using platform to determine tsc command, defaulting to [tsc]");
+            console.error(err);
+            return "tsc";
+        }
+    };
+
+    let configData;
 
     try {
-        const tsc = process.platform === "win32" ? "tsc.cmd" : "tsc";
+        const fileInfo = await fs.stat(LOCAL_CONFIG);
+        if (!fileInfo.isFile()) {
+            console.log("Even though config file exists, it is not a file so using default tsc command.");
+            return getDefaultTsc();
+        }
+
+        console.log(`Reading config file [${LOCAL_CONFIG}]`);
+        const rawConfig = await fs.readFile(LOCAL_CONFIG, {
+            encoding: "utf-8"
+        });
+        configData = toml.parse({
+            path: LOCAL_CONFIG,
+            data: rawConfig
+        }, 1.0, "\n");
+    } catch (err) {
+        try {
+            if (err.code === "ENOENT") {
+                console.log(`No config found at [${LOCAL_CONFIG}].`);
+            } else {
+                console.error(`Error reading [${LOCAL_CONFIG}]`);
+                console.error(err);
+            }
+        } catch (err2) {
+            console.error(`Could not check if error reading [${LOCAL_CONFIG}] was due to file not existing.`);
+            console.error(err2);
+            console.error(err);
+        }
+
+        return getDefaultTsc();
+    }
+
+    console.log("Read config data: %o", configData);
+    if (!configData.tsc || !configData.tsc.command) {
+        console.log("Config data does not have override for tsc command.");
+        return getDefaultTsc();
+    }
+
+    const command = configData.tsc.command;
+    if ((typeof command) != "string") {
+        console.error("Command must be a string.");
+        return getDefaultTsc();
+    }
+
+    return command;
+}
+
+async function compileTypescript() {
+    const mkdirProm = mkdirp(BUILD_DIR);
+    const tsc = await getTscCmd();
+    await mkdirProm;
+
+    try {
         await runBuildCmd(tsc);
         console.log("Compiled code.");
     } catch (err) {
