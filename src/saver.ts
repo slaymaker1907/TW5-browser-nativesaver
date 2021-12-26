@@ -359,6 +359,11 @@ class FileSystemSaver implements TWSaver {
         
         return true;
     }
+
+    reset() {
+        setupLogging(this.wiki);
+        this.fileHandle = undefined;
+    }
 }
 
 // Has one parameter, wiki if necessary
