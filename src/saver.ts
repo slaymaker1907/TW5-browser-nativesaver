@@ -361,8 +361,15 @@ class FileSystemSaver implements TWSaver {
     }
 
     reset() {
+        logDebug("Reseting file saver...");
+        try {
+            window.indexedDB.deleteDatabase(UNIQUE_PLUGIN_ID);
+        } catch(err) {
+            logDebug("Failed to delete file save location: %o", err);
+        }
         setupLogging(this.wiki);
         this.fileHandle = undefined;
+        logDebug("Reset file save location.");
     }
 }
 
@@ -377,12 +384,17 @@ const canSave = (handler: SaverHandler) => {
     }
 };
 
+let currentSaver: FileSystemSaver | null = null;
+
 // Also has access to wiki if necessary
 const create = (wiki: TWWiki) => {
-    return new FileSystemSaver(wiki);
+    const result = new FileSystemSaver(wiki);
+    currentSaver = result;
+    return result;
 };
 
 module.exports = {
     canSave,
-    create
+    create,
+    getCurrentSaver: () => currentSaver
 };

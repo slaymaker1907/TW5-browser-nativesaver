@@ -2,6 +2,8 @@ title: $:/plugins/slaymaker1907/browser-nativesaver/settings
 tags: $:/tags/ControlPanel/Saving
 caption: HTML Native File System Saver
 
+<$nativesavercontroller>
+
 <$checkbox tiddler="$:/plugins/slaymaker1907/browser-nativesaver/settings-data" field="enable-saver?" checked="yes" unchecked="no"
     default="yes"> Enable saver?</$checkbox>
 
@@ -16,5 +18,9 @@ caption: HTML Native File System Saver
     Wiki file name: <$edit-text tiddler="$:/plugins/slaymaker1907/browser-nativesaver/settings-data" field="wiki-file-name" />
 </$reveal>
 
-<!--- Hacky solution to clear database for the time being --->
-<button onclick="window.indexedDB.deleteDatabase('QqiTNHy4qkN9TtIYbd5i');">Reset file save location (requires reload)</button>
+<$button onclick="window.indexedDB.deleteDatabase('QqiTNHy4qkN9TtIYbd5i');">
+<$action-sendmessage $message="ns-reset-file-saver" />
+Reset file save location
+</$button>
+
+</$nativesavercontroller>
