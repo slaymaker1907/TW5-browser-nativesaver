@@ -101,10 +101,10 @@ function parseFilterOperation(operators,filterString,p) {
 			}
 			p = nextBracketPos + 1;
 		}
-		
+
 		p = nextBracketPos + 1;
 		parseOperand(bracket);
-		
+
 		// Check for multiple operands
 		while(filterString.charAt(p) === ",") {
 			p++;
@@ -116,7 +116,7 @@ function parseFilterOperation(operators,filterString,p) {
 				throw "Missing [ in filter expression";
 			}
 		}
-		
+
 		// Push this operator
 		operators.push(operator);
 	} while(filterString.charAt(p) !== "]");
@@ -248,12 +248,13 @@ exports.compileFilter = function(filterString) {
 				} else {
 					operatorFunction = filterOperators[operator.operator];
 				}
-				
+
 				$tw.utils.each(operator.operands,function(operand) {
 					if(operand.indirect) {
 						operand.value = self.getTextReference(operand.text,"",currTiddlerTitle);
 					} else if(operand.variable) {
-						operand.value = widget.getVariable(operand.text,{defaultValue: ""});
+						var varTree = $tw.utils.parseFilterVariable(operand.text);
+						operand.value = widget.getVariable(varTree.name,{params:varTree.params,defaultValue: ""});
 					} else {
 						operand.value = operand.text;
 					}
@@ -322,6 +323,9 @@ exports.compileFilter = function(filterString) {
 			source = self.each;
 		} else if(typeof source === "object") { // Array or hashmap
 			source = self.makeTiddlerIterator(source);
+		}
+		if(!widget) {
+			widget = $tw.rootWidget;
 		}
 		var results = new $tw.utils.LinkedList();
 		$tw.utils.each(operationFunctions,function(operationFunction) {
