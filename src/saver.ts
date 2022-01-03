@@ -335,6 +335,79 @@ const getFileHandle = async () => {
     }
 }
 
+class FileSystemSyncAdaptor implements TWSyncAdaptor<null> {
+    private initError: any = null;
+    private fileHandle?: Promise<FileSystemFileHandle>;
+    private wiki: TWWiki;
+
+    constructor(options: {wiki: TWWiki}) {
+        this.wiki = options.wiki;
+        setupLogging(options.wiki);
+        logDebug("Constructing FileSystemSyncAdaptor");
+    }
+
+    userInteractionInit() {
+        if (!this.fileHandle) {
+            logDebug("Attempting to get file handle.");
+            this.fileHandle = getFileHandle();
+            this.fileHandle.catch(err => {
+                problemEncountered = true;
+                this.initError = err;
+                logDebug("Could not get file handle due to error: %o", err);
+            });
+        }
+    }
+
+    saveTiddler(tiddler: Tiddler, callback: (err: string | null, adaptorInfo: null, revision: string) => any): void {
+        setupLogging(this.wiki);
+        const reject = (err: string) => callback(err, null, "");
+
+        if (!isEnabled(this.wiki)) {
+            logDebug("Not saving since this saver is not enabled.");
+            reject("Saving is not enabled.");
+            return;
+        }
+
+        this.fileHandle!.then(async handle => {
+            logDebug("Creating writable...");
+            const writable = await handle.createWritable();
+            logDebug("Created writable");
+
+            try {
+                await writable.write(text);
+                logDebug("Wrote data successfully");
+            } finally {
+                await writable.close();
+                logDebug("Closed writable");
+            }
+        }).then(() => {
+            logDebug("Successfully saved to file system");
+            callback(null);
+        }, err => {
+            problemEncountered = true;
+            logDebug("Encountered error while saving: %o", err);
+            callback(`Encountered error while saving to file system: [${err}]`);
+        });
+        
+        return true;
+
+        logDebug("Saving with method %o", method);
+        throw new Error("Method not implemented.");
+    }
+
+    loadTiddler(title: string, callback: (err: string | null, tiddler: TiddlerWithFields) => any): void {
+        throw new Error("Method not implemented.");
+    }
+
+    deleteTiddler(title: string, callback: (err: string | null) => any, options: { tiddlerInfo: null; }): void {
+        throw new Error("Method not implemented.");
+    }
+
+    getTiddlerInfo(tiddler: Tiddler): null {
+        throw new Error("Method not implemented.");
+    }
+}
+
 class FileSystemSaver implements TWSaver {
     public info: SaverInfo = {
         name: PLUGIN_NAME,
