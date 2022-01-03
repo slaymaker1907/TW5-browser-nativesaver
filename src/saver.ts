@@ -47,6 +47,47 @@ interface TWSaver {
     save(text: string, method: SaverCapability, callback: TWSaverCB): boolean;
 }
 
+interface TWSyncer {
+}
+
+interface UpdatedTiddlers {
+    modifications: string[];
+    deletions: string[];
+}
+
+interface TiddlerWithFields {
+    fields: TiddlerFields;
+}
+
+interface SkinnyTiddler {
+    fields: Omit<TiddlerFields, "text">;
+}
+
+interface TiddlerFields {
+    text: string;
+    title: string;
+    tags: string[];
+    modified: string;
+}
+
+interface TWSyncAdaptor<TiddlerInfo> {
+    saveTiddler(tiddler: Tiddler, callback: (err: string|null, adaptorInfo: TiddlerInfo, revision: string) => any): void;
+    loadTiddler(title: string, callback: (err: string|null, tiddler: TiddlerWithFields) => any): void;
+    deleteTiddler(title: string, callback: (err: string|null) => any, options: {tiddlerInfo: TiddlerInfo}): void;
+    getTiddlerInfo(tiddler: Tiddler): TiddlerInfo;
+    getTiddlerRevision?(title: string): string; // Docs say required but code says optional
+    getStatus?(callback: (err: string, isLoggedIn: boolean, username: string, isReadOnly: boolean) => any): void;
+    login?(username: string, password: string, callback: (err: string | null) => any): void;
+    displayLoginPrompt?(syncer: TWSyncer): void;
+    logout?(callback: (err: string | null) => void): void;
+    getUpdatedTiddlers?(syncer: TWSyncer, callback: (err: string | null, data: UpdatedTiddlers) => any): void;
+    getSkinnyTiddlers?(callback: (err: string|null, tiddlers: SkinnyTiddler[]) => any): void;
+}
+
+interface TWSyncAdaptorConstructor<TiddlerInfo> {
+    new(options: {wiki: TWWiki}): TWSyncAdaptor<TiddlerInfo>;
+}
+
 interface Tiddler {
     // Always returns a string, but may be blank.
     getFieldString(field: string): string;
