@@ -208,6 +208,7 @@ const DB_VERSION = 1;
 const DB_NAME = `FileHandles-${UNIQUE_PLUGIN_ID}`;
 const DB_HANDLE_OBJECT_STORE_NAME = "FileHandles";
 const CURRENT_FILE_HANDLE_NAME = "CURRENT_FILE_HANDLE";
+const CURRENT_FOLDER_HANDLE_NAME = "CURRENT_FOLDER_HANDLE";
 const IDB_READWRITE = "readwrite";
 const IDB_READONLY = "readonly";
 const IDB_RELAXED = "relaxed";
@@ -272,10 +273,13 @@ const requestFileHandle = async () => {
     return await Promise.reject("Could not get file for saving.");
 }
 
-const getFileHandle = async () => {
+const getFileHandle = async (handleName: string) => {
     let transaction: IDBTransaction;
     let store: IDBObjectStore;
     let db: IDBDatabase;
+
+    logDebug("Looking up handle named %o", handleName);
+
     try {
         db = await tryCreateHandleStore();
         transaction = db.transaction([DB_HANDLE_OBJECT_STORE_NAME], IDB_READONLY);
@@ -296,7 +300,7 @@ const getFileHandle = async () => {
             // Have to get a new transaction because requestFileHandle puts us in a new event loop.
             transaction = db.transaction([DB_HANDLE_OBJECT_STORE_NAME], IDB_READWRITE);
             store = transaction.objectStore(DB_HANDLE_OBJECT_STORE_NAME);
-            idbRequestToPromise(store.put(fileHandle, CURRENT_FILE_HANDLE_NAME)).then(async () => {
+            idbRequestToPromise(store.put(fileHandle, handleName)).then(async () => {
                 await getTransactionCommitPromise(transaction);
                 logDebug("Successfully saved file handle %o to object store.", fileHandle);
             }, err => {
@@ -311,7 +315,7 @@ const getFileHandle = async () => {
     };
 
     try {
-        const maybeFileHandle: FileSystemFileHandle|undefined = await idbRequestToPromise(store.get(CURRENT_FILE_HANDLE_NAME));
+        const maybeFileHandle: FileSystemFileHandle|undefined = await idbRequestToPromise(store.get(handleName));
         if (!maybeFileHandle) {
             logDebug("No existing file handle found, must request new one");
             return await requestAndStoreNewFile();
@@ -348,8 +352,8 @@ class FileSystemSyncAdaptor implements TWSyncAdaptor<null> {
 
     userInteractionInit() {
         if (!this.fileHandle) {
-            logDebug("Attempting to get file handle.");
-            this.fileHandle = getFileHandle();
+            logDebug("Attempting to get folder handle.");
+            this.fileHandle = getFileHandle(CURRENT_FOLDER_HANDLE_NAME);
             this.fileHandle.catch(err => {
                 problemEncountered = true;
                 this.initError = err;

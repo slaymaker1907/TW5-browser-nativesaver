@@ -11,6 +11,12 @@ const BUILD_DIR = path.join(__dirname, "build");
 const TW5_COM_DIR = path.join(TW5_DIR, "editions", "tw5.com");
 const LOCAL_CONFIG = path.join(__dirname, "local-config.toml");
 
+// Calls promise.catch with an empty result so
+// that nodejs will never crash with unhandled promise rejection
+function deferPromise(promise) {
+    promise.catch(() => {});
+}
+
 async function moveTiddler(tiddler) {
     await fs.copyFile(path.join(SRC_DIR, tiddler), path.join(PLUGIN_DIR, tiddler));
     console.log("Moved [%s].", tiddler);
