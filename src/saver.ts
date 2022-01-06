@@ -72,7 +72,7 @@ interface TiddlerFields {
 
 interface TWSyncAdaptor<TiddlerInfo> {
     saveTiddler(tiddler: Tiddler, callback: (err: string|null, adaptorInfo: TiddlerInfo, revision: string) => any): void;
-    loadTiddler(title: string, callback: (err: string|null, tiddler: TiddlerWithFields) => any): void;
+    loadTiddler(title: string, callback: (err: string|null, tiddler: TiddlerWithFields|null) => any): void;
     deleteTiddler(title: string, callback: (err: string|null) => any, options: {tiddlerInfo: TiddlerInfo}): void;
     getTiddlerInfo(tiddler: Tiddler): TiddlerInfo;
     getTiddlerRevision?(title: string): string; // Docs say required but code says optional
@@ -91,6 +91,7 @@ interface TWSyncAdaptorConstructor<TiddlerInfo> {
 interface Tiddler {
     // Always returns a string, but may be blank.
     getFieldString(field: string): string;
+    fields: any;
 }
 
 interface TWWiki {
@@ -250,6 +251,19 @@ const tryCreateHandleStore = async () => {
     }
 };
 
+const requestDirectoryHandle = async () => {
+    for (let i = 0; i < 2; i++) {
+        const result = await window.showDirectoryPicker();
+        logDebug("Received directory handle: %o", result)
+        if (result.kind === "directory") {
+            return result;
+        }
+        alert("File input must be a directory, not a file.");
+    }
+
+    return await Promise.reject("Could not get dir for saving.");
+}
+
 const requestFileHandle = async () => {
     for (let i = 0; i < 2; i++) {
         const result = await window.showSaveFilePicker({
@@ -273,7 +287,7 @@ const requestFileHandle = async () => {
     return await Promise.reject("Could not get file for saving.");
 }
 
-const getFileHandle = async (handleName: string) => {
+const getFileHandle = async <T extends FileSystemHandle>(handleName: string, requestor: () => Promise<T>) => {
     let transaction: IDBTransaction;
     let store: IDBObjectStore;
     let db: IDBDatabase;
@@ -286,12 +300,12 @@ const getFileHandle = async (handleName: string) => {
         store = transaction.objectStore(DB_HANDLE_OBJECT_STORE_NAME);
     } catch (err) {
         logDebug("Could not get handle store due to error, must request file location from user: %o", err);
-        return await requestFileHandle();
+        return await requestor();
     }
     // store must now be initialized
 
     const requestAndStoreNewFile = async () => {
-        const fileHandle = await requestFileHandle();
+        const fileHandle = await requestor();
 
         logDebug("Saving file handle %o to object store to avoid requests in the future", fileHandle);
         // Don't await this and just let it execute in background since it isn't really that
@@ -315,7 +329,7 @@ const getFileHandle = async (handleName: string) => {
     };
 
     try {
-        const maybeFileHandle: FileSystemFileHandle|undefined = await idbRequestToPromise(store.get(handleName));
+        const maybeFileHandle: T|undefined = await idbRequestToPromise(store.get(handleName));
         if (!maybeFileHandle) {
             logDebug("No existing file handle found, must request new one");
             return await requestAndStoreNewFile();
@@ -341,7 +355,7 @@ const getFileHandle = async (handleName: string) => {
 
 class FileSystemSyncAdaptor implements TWSyncAdaptor<null> {
     private initError: any = null;
-    private fileHandle?: Promise<FileSystemFileHandle>;
+    private directoryHandle?: Promise<FileSystemDirectoryHandle>;
     private wiki: TWWiki;
 
     constructor(options: {wiki: TWWiki}) {
@@ -350,15 +364,31 @@ class FileSystemSyncAdaptor implements TWSyncAdaptor<null> {
         logDebug("Constructing FileSystemSyncAdaptor");
     }
 
+    getTiddlerFileName(tiddlerName: string) {
+        // TODO: implement actually folder wiki algorithm
+        return encodeURIComponent(tiddlerName);
+    }
+
     userInteractionInit() {
-        if (!this.fileHandle) {
+        if (!this.directoryHandle) {
             logDebug("Attempting to get folder handle.");
-            this.fileHandle = getFileHandle(CURRENT_FOLDER_HANDLE_NAME);
-            this.fileHandle.catch(err => {
+            this.directoryHandle = new Promise<any>((resolve, reject) => {
+                const callbackToCleanup = () => {
+                    try {
+                        const result = getFileHandle(CURRENT_FOLDER_HANDLE_NAME, requestDirectoryHandle);
+                        resolve(result);
+                    } catch (err) {
+                        reject(err);
+                    } finally {
+                        window.removeEventListener("click", callbackToCleanup);
+                    }
+                };
+                window.addEventListener("click", callbackToCleanup);
+            }).catch(err => {
                 problemEncountered = true;
                 this.initError = err;
                 logDebug("Could not get file handle due to error: %o", err);
-            });
+            })
         }
     }
 
@@ -371,44 +401,111 @@ class FileSystemSyncAdaptor implements TWSyncAdaptor<null> {
             reject("Saving is not enabled.");
             return;
         }
+        const title = tiddler.getFieldString("title");
+        logDebug("Saving tiddler with title: [%o]", title);
+        const fileName = this.getTiddlerFileName(title);
+        logDebug("Will save tiddler to file with name: [%o]", fileName);
 
-        this.fileHandle!.then(async handle => {
-            logDebug("Creating writable...");
-            const writable = await handle.createWritable();
-            logDebug("Created writable");
+        this.userInteractionInit();
+        this.directoryHandle!.then(async handle => {
+            const fileHandle = await handle.getFileHandle(fileName, {
+                create: true
+            });
+
+            logDebug("Obtained file handle for tiddler.")
+            const writable = await fileHandle.createWritable();
+            logDebug("Created writable for file handle.");
 
             try {
-                await writable.write(text);
+                const serializedTiddler = JSON.stringify(tiddler.fields);
+                await writable.write(serializedTiddler);
                 logDebug("Wrote data successfully");
             } finally {
                 await writable.close();
                 logDebug("Closed writable");
             }
         }).then(() => {
-            logDebug("Successfully saved to file system");
-            callback(null);
+            logDebug("Successfully saved tiddler to file system");
+            callback(null, null, "1");
         }, err => {
             problemEncountered = true;
             logDebug("Encountered error while saving: %o", err);
-            callback(`Encountered error while saving to file system: [${err}]`);
+            reject(`Encountered error while saving to file system: [${err}]`);
         });
-        
-        return true;
-
-        logDebug("Saving with method %o", method);
-        throw new Error("Method not implemented.");
     }
 
-    loadTiddler(title: string, callback: (err: string | null, tiddler: TiddlerWithFields) => any): void {
-        throw new Error("Method not implemented.");
+    loadTiddler(title: string, callback: (err: string | null, tiddler: TiddlerWithFields|null) => any): void {
+        setupLogging(this.wiki);
+
+        const reject = (err: string) => callback(err, null);
+
+        if (!isEnabled(this.wiki)) {
+            logDebug("Not saving since this saver is not enabled.");
+            reject("Saving is not enabled.");
+            return;
+        }
+
+        logDebug("Loading tiddler [%o]", title);
+        const fileName = this.getTiddlerFileName(title);
+        logDebug("Will load tiddler from file with name: [%o]", fileName);
+
+        this.userInteractionInit();
+        this.directoryHandle!.then(async handle => {
+            const fileHandle = await handle.getFileHandle(fileName, {
+                create: false
+            });
+
+            logDebug("Getting reader for file...");
+            const reader = await fileHandle.getFile();
+            logDebug("Got reader for file.");
+            const text = await reader.text();
+            logDebug("Retrieved text from file.");
+            const fields = JSON.parse(text);
+            logDebug("Parsed fields.");
+            
+            const actualTitle = fields.title;
+            if (actualTitle !== title) {
+                return Promise.reject(`Expected title: [${title}] but loaded title: [${actualTitle}].`);
+            }
+
+            callback(null, {
+                fields
+            });
+        }).catch(err => {
+            logDebug("Error loading tiddler", err)
+            reject(err);
+        });
     }
 
     deleteTiddler(title: string, callback: (err: string | null) => any, options: { tiddlerInfo: null; }): void {
-        throw new Error("Method not implemented.");
+        setupLogging(this.wiki);
+
+        if (!isEnabled(this.wiki)) {
+            logDebug("Not saving since this saver is not enabled.");
+            callback("Saving is not enabled.");
+            return;
+        }
+
+        logDebug("Deleting tiddler with title: [%o]", title);
+        const fileName = this.getTiddlerFileName(title);
+        logDebug("Will delete file: [%o]", fileName);
+
+        this.userInteractionInit();
+        this.directoryHandle!.then(async handle => {
+            await handle.removeEntry(fileName, {
+                recursive: true
+            });
+        }).then(() => {
+            logDebug("Successfully deleted tiddler.");
+            callback(null);
+        }).catch(err => {
+            logDebug("Encountered error while deleting: %o", err);
+            callback(`Encountered error while deleting: [${err}]`);
+        })
     }
 
     getTiddlerInfo(tiddler: Tiddler): null {
-        throw new Error("Method not implemented.");
+        return null;
     }
 }
 
@@ -429,7 +526,7 @@ class FileSystemSaver implements TWSaver {
     userInteractionInit() {
         if (!this.fileHandle) {
             logDebug("Attempting to get file handle.");
-            this.fileHandle = getFileHandle();
+            this.fileHandle = getFileHandle(CURRENT_FILE_HANDLE_NAME, requestFileHandle);
             this.fileHandle.catch(err => {
                 problemEncountered = true;
                 this.initError = err;
@@ -514,5 +611,6 @@ const create = (wiki: TWWiki) => {
 module.exports = {
     canSave,
     create,
-    getCurrentSaver: () => currentSaver
+    getCurrentSaver: () => currentSaver,
+    syncAdaptor: FileSystemSyncAdaptor
 };

@@ -24,7 +24,7 @@ async function moveTiddler(tiddler) {
 
 async function movePlainTiddlers(createPluginDirPromise) {
     const files = await fs.readdir(SRC_DIR);
-    const tiddlers = files.filter(tid => tid.endsWith(".tid") || tid.endsWith(".info"));
+    const tiddlers = files.filter(tid => tid.endsWith(".tid") || tid.endsWith(".info") || tid.endsWith(".js"));
 
     await createPluginDirPromise;
     const movePromises = tiddlers.map(moveTiddler);
