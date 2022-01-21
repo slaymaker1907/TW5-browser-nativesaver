@@ -253,7 +253,12 @@ const tryCreateHandleStore = async () => {
 
 const requestDirectoryHandle = async () => {
     for (let i = 0; i < 2; i++) {
-        const result = await window.showDirectoryPicker();
+        // TODO: need to check for whether id is ok, probably also want way to specify ID
+        // per wiki.
+        const result = await window.showDirectoryPicker({
+            id: UNIQUE_PLUGIN_ID,
+            startIn: "downloads"
+        });
         logDebug("Received directory handle: %o", result)
         if (result.kind === "directory") {
             return result;
@@ -468,9 +473,12 @@ class FileSystemSyncAdaptor implements TWSyncAdaptor<null> {
                 return Promise.reject(`Expected title: [${title}] but loaded title: [${actualTitle}].`);
             }
 
-            callback(null, {
-                fields
-            });
+            // const result = {
+            //     ...fields,
+            //     fields: fields
+            // };
+
+            callback(null, new (window as any).$tw.Tiddler(fields));
         }).catch(err => {
             logDebug("Error loading tiddler", err)
             reject(err);
@@ -506,6 +514,38 @@ class FileSystemSyncAdaptor implements TWSyncAdaptor<null> {
 
     getTiddlerInfo(tiddler: Tiddler): null {
         return null;
+    }
+
+    getUpdatedTiddlers(syncer: TWSyncer, callback: (err: string | null, data: UpdatedTiddlers) => any) {
+        setupLogging(this.wiki);
+
+        const reject = (err: string) => callback(err, null as any);
+
+        if (!isEnabled(this.wiki)) {
+            logDebug("Not saving since this saver is not enabled.");
+            reject("Saving is not enabled.");
+            return;
+        }
+
+        this.userInteractionInit();
+        logDebug("Checking for updated tiddlers");
+        this.directoryHandle!.then(async handle => {
+            const result = [];
+            for await (const fileHandle of handle) {
+                const name = decodeURIComponent(fileHandle[0]);
+                result.push(name);
+            }
+
+            // Currently don't handle actual updates/deletions
+            callback(null, {
+                modifications: result,
+                deletions: []
+            })
+        }).catch(reject);
+    }
+
+    getTiddlerRevision(title: string) {
+        return "1";
     }
 }
 
