@@ -52,8 +52,14 @@ interface Tiddler {
     getFieldString(field: string): string;
 }
 
+interface TWModalManager {
+    display(tiddlerTitle: string): void;
+}
+
 interface TWWiki {
     getTiddler(name: string): Tiddler|undefined;
+    addTiddler(tiddler: any): void;
+    modal: TWModalManager;
 }
 
 interface SaverHandler {
@@ -66,11 +72,14 @@ let problemEncountered = false;
 const PLUGIN_NAME = "slaymaker1907/browser-nativesaver";
 const BASE_TIDDLER_PATH = `$:/plugins/${PLUGIN_NAME}`;
 const PLUGIN_SETTINGS_DATA = `${BASE_TIDDLER_PATH}/settings-data`
+const PLUGIN_SETTINGS_TIDDLER = `${BASE_TIDDLER_PATH}/settings`
 const ENABLE_LOGGING_FIELD = "enable-logging?";
 const ENABLE_SAVER_FIELD = "enable-saver?";
 const SAVER_STYLE_FIELD = "save-style";
+const FORCE_INDEXED_DB_FIELD = "force-indexedDB?";
 const YES = "yes";
 const UNIQUE_PLUGIN_ID = "QqiTNHy4qkN9TtIYbd5i";
+const WELCOME_PAGE = "$:/plugins/slaymaker1907/browser-nativesaver/welcome";
 
 let logDebug = console.log;
 
@@ -123,6 +132,10 @@ const isServedFromFS = () => {
     }
 };
 
+function canUseIndexedDB(wiki: TWWiki): boolean {
+    return !isServedFromFS() || wiki.getTiddler(PLUGIN_SETTINGS_DATA)!.getFieldString(FORCE_INDEXED_DB_FIELD) === YES;
+}
+
 /**
  * Converts an IDBRequest to an equivalent Promise.
  */
@@ -170,12 +183,12 @@ const CURRENT_FILE_HANDLE_NAME = "CURRENT_FILE_HANDLE";
 const IDB_READWRITE = "readwrite";
 const IDB_READONLY = "readonly";
 const IDB_RELAXED = "relaxed";
-const tryCreateHandleStore = async () => {
+const tryCreateHandleStore = async (wiki: TWWiki) => {
     if (!window.indexedDB) {
         const message = "Cannot save file handle across browser sessions because your browser does not support IndexedDB.";
         logDebug(message);
         return Promise.reject(message);
-    } else if (isServedFromFS()) {
+    } else if (!canUseIndexedDB(wiki)) {
         const message = "It is not secure to save sensitive data to IndexedDB when using the file:/ protocol.";
         logDebug(message);
         logDebug("This is a security issue because anything served via file:/ share a single origin in Chromium browsers.");
@@ -208,7 +221,7 @@ const tryCreateHandleStore = async () => {
     }
 };
 
-const requestFileHandle = async () => {
+const requestFileHandle = async (startIn?: FileSystemHandle) => {
     for (let i = 0; i < 2; i++) {
         const result = await window.showSaveFilePicker({
             types: [{
@@ -219,8 +232,10 @@ const requestFileHandle = async () => {
                         ".htm"
                     ]
                 }
-            }]
-        });
+            }],
+            id: UNIQUE_PLUGIN_ID,
+            startIn
+        } as any);
         logDebug("Received file handle: %o", result)
         if (result.kind === "file") {
             return result;
@@ -231,12 +246,16 @@ const requestFileHandle = async () => {
     return await Promise.reject("Could not get file for saving.");
 }
 
-const getFileHandle = async () => {
+const getIndexedDBKey = () => {
+    return CURRENT_FILE_HANDLE_NAME + hashToString(window.location.href);
+}
+
+const getFileHandle = async (wiki: TWWiki) => {
     let transaction: IDBTransaction;
     let store: IDBObjectStore;
     let db: IDBDatabase;
     try {
-        db = await tryCreateHandleStore();
+        db = await tryCreateHandleStore(wiki);
         transaction = db.transaction([DB_HANDLE_OBJECT_STORE_NAME], IDB_READONLY);
         store = transaction.objectStore(DB_HANDLE_OBJECT_STORE_NAME);
     } catch (err) {
@@ -245,8 +264,8 @@ const getFileHandle = async () => {
     }
     // store must now be initialized
 
-    const requestAndStoreNewFile = async () => {
-        const fileHandle = await requestFileHandle();
+    const requestAndStoreNewFile = async (startHandle?: FileSystemHandle) => {
+        const fileHandle = await requestFileHandle(startHandle);
 
         logDebug("Saving file handle %o to object store to avoid requests in the future", fileHandle);
         // Don't await this and just let it execute in background since it isn't really that
@@ -255,7 +274,7 @@ const getFileHandle = async () => {
             // Have to get a new transaction because requestFileHandle puts us in a new event loop.
             transaction = db.transaction([DB_HANDLE_OBJECT_STORE_NAME], IDB_READWRITE);
             store = transaction.objectStore(DB_HANDLE_OBJECT_STORE_NAME);
-            idbRequestToPromise(store.put(fileHandle, CURRENT_FILE_HANDLE_NAME)).then(async () => {
+            idbRequestToPromise(store.put(fileHandle, getIndexedDBKey())).then(async () => {
                 await getTransactionCommitPromise(transaction);
                 logDebug("Successfully saved file handle %o to object store.", fileHandle);
             }, err => {
@@ -270,14 +289,13 @@ const getFileHandle = async () => {
     };
 
     try {
-        const maybeFileHandle: FileSystemFileHandle|undefined = await idbRequestToPromise(store.get(CURRENT_FILE_HANDLE_NAME));
+        const maybeFileHandle: FileSystemFileHandle|undefined = await idbRequestToPromise(store.get(getIndexedDBKey()));
         if (!maybeFileHandle) {
             logDebug("No existing file handle found, must request new one");
             return await requestAndStoreNewFile();
         }
 
         // Explicitly request permission to readwrite to avoid permissions issues later on.
-        // TODO: verify window.location matches before using file in case it has been moved.
         logDebug("Found a previous file handle so try to avoid duplicate requests to user for file location %o", maybeFileHandle);
         logDebug("Requesting permission for RW on file object.");
         const status = await maybeFileHandle.requestPermission({ mode: IDB_READWRITE }); // These strings happen to be the same for IDB and files.
@@ -294,6 +312,25 @@ const getFileHandle = async () => {
     }
 }
 
+// Returns a string hash in hex for easy comparison and printing.
+async function hashToString(data: string | ArrayBuffer): Promise<string> {
+    let buffer: ArrayBuffer;
+    if (typeof data === "string") {
+        const encoder = new TextEncoder();
+        buffer = encoder.encode(data);
+    } else {
+        buffer = data;
+    }
+
+    // Adapted from example at https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest
+    const hashBytes = await window.crypto.subtle.digest("SHA-256", buffer);
+    const hashArray = Array.from(new Uint8Array(hashBytes));
+    const hexChars = hashArray.map(byte => byte.toString(16))
+
+    // Pad in case hash is small.
+    return hexChars.join("").padStart(64, "0");
+}
+
 class FileSystemSaver implements TWSaver {
     public info: SaverInfo = {
         name: PLUGIN_NAME,
@@ -302,6 +339,7 @@ class FileSystemSaver implements TWSaver {
     };
     private initError: any = null;
     private fileHandle?: Promise<FileSystemFileHandle>;
+    private prevPageHash?: Promise<string>;
 
     constructor(private wiki: TWWiki) {
         setupLogging(wiki);
@@ -311,13 +349,46 @@ class FileSystemSaver implements TWSaver {
     userInteractionInit() {
         if (!this.fileHandle) {
             logDebug("Attempting to get file handle.");
-            this.fileHandle = getFileHandle();
+            this.fileHandle = getFileHandle(this.wiki);
             this.fileHandle.catch(err => {
                 problemEncountered = true;
                 this.initError = err;
                 logDebug("Could not get file handle due to error: %o", err);
             });
         }
+    }
+
+    async checkConsistency(newText: string) {
+        if (!this.shouldCheckConsistency()) {
+            logDebug("Skipping consistency check since it is disabled");
+            return;
+        }
+
+        if (!this.prevPageHash) {
+            logDebug("No previous known hash to compare against");
+            return;
+        }
+
+        const handle = await this.fileHandle!;
+        logDebug("Reading current value to check consistency");
+        const reader = await handle.getFile();
+        const currentText = await reader.text();
+        const currentHash = await hashToString(currentText);
+        const prevHash = await this.prevPageHash;
+        if (currentHash !== prevHash) {
+            logDebug("Expected hash to be [%s] but it is currently [%s]", prevHash, currentHash);
+            problemEncountered = true;
+            const err = "Previous page source does not match the current text"
+            return Promise.reject(err);
+        }
+
+        logDebug("Previous value matches the current value so saving is safe");
+        logDebug("Computing hash of text to save...");
+        this.prevPageHash = hashToString(newText);
+    }
+
+    shouldCheckConsistency() {
+        return this.wiki.getTiddler(PLUGIN_SETTINGS_DATA)!.getFieldString(ENABLE_SAVER_FIELD) === YES;
     }
 
     save(text: string, method: SaverCapability, callback: TWSaverCB) {
@@ -336,7 +407,10 @@ class FileSystemSaver implements TWSaver {
             return false;
         }
 
+
         this.fileHandle!.then(async handle => {
+            await this.checkConsistency(text);
+
             logDebug("Creating writable...");
             const writable = await handle.createWritable();
             logDebug("Created writable");
@@ -369,6 +443,8 @@ class FileSystemSaver implements TWSaver {
         }
         setupLogging(this.wiki);
         this.fileHandle = undefined;
+        this.initError = undefined;
+        this.prevPageHash = undefined;
         logDebug("Reset file save location.");
     }
 }
@@ -390,6 +466,13 @@ let currentSaver: FileSystemSaver | null = null;
 const create = (wiki: TWWiki) => {
     const result = new FileSystemSaver(wiki);
     currentSaver = result;
+
+    // Wait one event cycle before trying to show the welcome page.
+    window.setTimeout(() => {
+        const modal = (window as any).$tw.modal as TWModalManager;
+        modal.display(WELCOME_PAGE);
+    }, 0);
+
     return result;
 };
 
