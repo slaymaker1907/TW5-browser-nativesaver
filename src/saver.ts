@@ -76,7 +76,7 @@ const PLUGIN_SETTINGS_TIDDLER = `${BASE_TIDDLER_PATH}/settings`
 const ENABLE_LOGGING_FIELD = "enable-logging?";
 const ENABLE_SAVER_FIELD = "enable-saver?";
 const SAVER_STYLE_FIELD = "save-style";
-const FORCE_INDEXED_DB_FIELD = "force-indexedDB?";
+const ALLOW_INDEXED_DB_FIELD = "allow-indexedDB?";
 const YES = "yes";
 const UNIQUE_PLUGIN_ID = "QqiTNHy4qkN9TtIYbd5i";
 const WELCOME_PAGE = "$:/plugins/slaymaker1907/browser-nativesaver/welcome";
@@ -133,7 +133,7 @@ const isServedFromFS = () => {
 };
 
 function canUseIndexedDB(wiki: TWWiki): boolean {
-    return !isServedFromFS() || wiki.getTiddler(PLUGIN_SETTINGS_DATA)!.getFieldString(FORCE_INDEXED_DB_FIELD) === YES;
+    return !isServedFromFS() || wiki.getTiddler(PLUGIN_SETTINGS_DATA)!.getFieldString(ALLOW_INDEXED_DB_FIELD) === YES;
 }
 
 /**
@@ -246,14 +246,18 @@ const requestFileHandle = async (startIn?: FileSystemHandle) => {
     return await Promise.reject("Could not get file for saving.");
 }
 
-const getIndexedDBKey = () => {
-    return CURRENT_FILE_HANDLE_NAME + hashToString(window.location.href);
+const getIndexedDBKey = async () => {
+    return CURRENT_FILE_HANDLE_NAME + (await hashToString(window.location.href));
 }
 
 const getFileHandle = async (wiki: TWWiki) => {
     let transaction: IDBTransaction;
     let store: IDBObjectStore;
     let db: IDBDatabase;
+
+    const storageKey = await getIndexedDBKey();
+    logDebug("Computed storage key to be: [%s]", storageKey);
+
     try {
         db = await tryCreateHandleStore(wiki);
         transaction = db.transaction([DB_HANDLE_OBJECT_STORE_NAME], IDB_READONLY);
@@ -274,7 +278,7 @@ const getFileHandle = async (wiki: TWWiki) => {
             // Have to get a new transaction because requestFileHandle puts us in a new event loop.
             transaction = db.transaction([DB_HANDLE_OBJECT_STORE_NAME], IDB_READWRITE);
             store = transaction.objectStore(DB_HANDLE_OBJECT_STORE_NAME);
-            idbRequestToPromise(store.put(fileHandle, getIndexedDBKey())).then(async () => {
+            idbRequestToPromise(store.put(fileHandle, storageKey)).then(async () => {
                 await getTransactionCommitPromise(transaction);
                 logDebug("Successfully saved file handle %o to object store.", fileHandle);
             }, err => {
@@ -289,7 +293,7 @@ const getFileHandle = async (wiki: TWWiki) => {
     };
 
     try {
-        const maybeFileHandle: FileSystemFileHandle|undefined = await idbRequestToPromise(store.get(getIndexedDBKey()));
+        const maybeFileHandle: FileSystemFileHandle|undefined = await idbRequestToPromise(store.get(storageKey));
         if (!maybeFileHandle) {
             logDebug("No existing file handle found, must request new one");
             return await requestAndStoreNewFile();
@@ -443,7 +447,7 @@ class FileSystemSaver implements TWSaver {
         }
         setupLogging(this.wiki);
         this.fileHandle = undefined;
-        this.initError = undefined;
+        this.initError = null;
         this.prevPageHash = undefined;
         logDebug("Reset file save location.");
     }

@@ -7,6 +7,6 @@
 	"list": "",
 	"plugin-type": "plugin",
 	"source": "https://github.com/slaymaker1907/TW5-fsa-saver",
-	"version": "0.5.2",
+	"version": "0.5.3",
 	"core-version": ">=5.0.8"
 }
