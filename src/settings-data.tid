@@ -1,3 +1,5 @@
 title: $:/plugins/slaymaker1907/browser-nativesaver/settings-data
 enable-logging?: no
 enable-saver?: yes
+check-consistency?: yes
+allow-indexedDB?: no

@@ -1,0 +1,23 @@
+title: $:/plugins/slaymaker1907/browser-nativesaver/welcome
+tags:
+
+\define tmSaveWikiHelper()
+<!-- <$action-sendmessage $message="tm-save-tiddler" $param="$:/plugins/slaymaker1907/browser-nativesaver/welcome/settings-data" /> -->
+<$action-sendmessage $message="tm-save-wiki" $ />
+<$action-sendmessage $message="tm-close-tiddler" />
+\end
+
+! HTML Native File System Saver
+
+We require a click event to start the save dialogue.
+
+<$button style="font-size: 1.5em; width: 15em" actions=<<tmSaveWikiHelper>> >Save</$button>
+
+<br>
+<hr>
+
+! Settings
+
+<!-- <$vars nativeSaverSettings="$:/plugins/slaymaker1907/browser-nativesaver/welcome/settings-data"> -->
+{{$:/plugins/slaymaker1907/browser-nativesaver/settings}}
+<!-- </$vars> -->

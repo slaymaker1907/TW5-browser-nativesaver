@@ -2,19 +2,24 @@ title: $:/plugins/slaymaker1907/browser-nativesaver/settings
 tags: $:/tags/ControlPanel/Saving
 caption: HTML Native File System Saver
 
+<$set name="nativeSaverSettings" value=<<nativeSaverSettings>> emptyValue="$:/plugins/slaymaker1907/browser-nativesaver/settings-data">
 <$nativesavercontroller>
 
-<$checkbox tiddler="$:/plugins/slaymaker1907/browser-nativesaver/settings-data" field="enable-saver?" checked="yes" unchecked="no"
+<$checkbox tiddler=<<nativeSaverSettings>> field="enable-saver?" checked="yes" unchecked="no"
     default="yes"> Enable saver?</$checkbox>
 
-<$checkbox tiddler="$:/plugins/slaymaker1907/browser-nativesaver/settings-data" field="enable-logging?" checked="yes" unchecked="no" default="no"> Enable debug logging?</$checkbox>
+<$checkbox tiddler=<<nativeSaverSettings>> field="enable-logging?" checked="yes" unchecked="no" default="no"> Enable debug logging?</$checkbox>
 
-<$select tiddler="$:/plugins/slaymaker1907/browser-nativesaver/settings-data" field="save-style" default="single-file">
+<$checkbox tiddler=<<nativeSaverSettings>> field="allow-indexedDB?" checked="yes" unchecked="no" default="no"> Allow FS to use indexedDB? (some security issues since everything on file:// has the same origin)</$checkbox>
+
+<$checkbox tiddler=<<nativeSaverSettings>> field="check-consistency?" checked="yes" unchecked="no" default="no"> Check consistency to avoid parallel writes?</$checkbox>
+
+<$select tiddler=<<nativeSaverSettings>> field="save-style" default="single-file">
     <option value="single-file">Single file</option>
-    <option value="single-file-version-backup">Single file with versioned backups (all stored in a single directory)</option>
+    <!-- <option value="single-file-version-backup">Single file with versioned backups (all stored in a single directory)</option> -->
 </$select>
 
-<$reveal type="match" state="$:/plugins/slaymaker1907/browser-nativesaver/settings-data!!save-style" text="single-file-version-backup">
+<$reveal type="match" stateTitle=<<stateTitle>> stateField="save-style" text="single-file-version-backup">
     Wiki file name: <$edit-text tiddler="$:/plugins/slaymaker1907/browser-nativesaver/settings-data" field="wiki-file-name" />
 </$reveal>
 
@@ -24,3 +29,4 @@ Reset file save location
 </$button>
 
 </$nativesavercontroller>
+</$set>
