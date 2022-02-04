@@ -194,6 +194,10 @@ async function main() {
     await withPluginInInfoFile(async () =>  {
         await compileTiddlyWiki();
     });
+
+    const tw5Output = path.join(TW5_COM_DIR, "output", "index.html");
+    const tw5TopCopy = path.join(__dirname, "tw5.html");
+    await fs.copyFile(tw5Output, tw5TopCopy);
 }
 
 main().then(() => {

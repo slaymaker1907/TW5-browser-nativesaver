@@ -107,3 +107,6 @@ dist
 /TiddlyWiki5/plugins/slaymaker1907/
 
 /local-config.toml
+
+# tw5.html at top level.
+/tw5.html
