@@ -16,11 +16,11 @@ caption: HTML Native File System Saver
 
 <$select tiddler=<<nativeSaverSettings>> field="save-style" default="single-file">
     <option value="single-file">Single file</option>
-    <!-- <option value="single-file-version-backup">Single file with versioned backups (all stored in a single directory)</option> -->
+    <option value="single-file-version-backup">Single file with versioned backups (all stored in a single directory)</option>
 </$select>
 
-<$reveal type="match" stateTitle=<<stateTitle>> stateField="save-style" text="single-file-version-backup">
-    Wiki file name: <$edit-text tiddler="$:/plugins/slaymaker1907/browser-nativesaver/settings-data" field="wiki-file-name" />
+<$reveal type="match" stateTitle=<<nativeSaverSettings>> stateField="save-style" text="single-file-version-backup">
+    Wiki file name (same as download saver if empty): <$edit-text tiddler="$:/plugins/slaymaker1907/browser-nativesaver/settings-data" field="wiki-file-name" />
 </$reveal>
 
 <$button onclick="window.indexedDB.deleteDatabase('QqiTNHy4qkN9TtIYbd5i');">

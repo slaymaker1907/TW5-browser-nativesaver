@@ -3,3 +3,4 @@ enable-logging?: no
 enable-saver?: yes
 check-consistency?: yes
 allow-indexedDB?: no
+wiki-file-name:

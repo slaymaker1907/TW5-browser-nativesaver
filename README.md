@@ -3,8 +3,21 @@
 If you just want to install the plugin, download [example-wiki.html](./example-wiki.html)
 and import into your wiki.
 
-Note that only the single file wiki is currently supported. Support for
-saving multiple versions is currently a WIP.
+On startup, a modal is displayed with file saver settings. Note that it
+is recommended to leave the consistency check on. This helps avoid concurrent
+writes such as happens when the same wiki is open in separate tabs.
+
+Allowing IndexedDB usage when the wiki is loaded from file:// instead
+of a webserver is a potential security issue. Chromium based browsers
+consider every page from file:// to be the same origin. This means if you
+open an untrusted html file, it could read/write to your wiki file. Note
+that this requires you to explicitly download the html page and then
+open it from your file system. Merely going to a webpage served via http(s)
+is not enough to exploit this vulnerability.
+
+It is recommended to backup the location where you store your wiki regularly.
+However, the single file with versioned backup saver style saves each version
+of your wiki under /{selected folder}/backups/{wiki filename/{version hash}.html.
 
 # Updating TW5 Version
 
