@@ -453,6 +453,7 @@ class FileSystemSaver implements TWSaver {
 
         if (!this.prevPageHash) {
             logDebug("No previous known hash to compare against");
+            this.prevPageHash = hashToString(newText);
             return;
         }
 
