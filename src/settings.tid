@@ -23,7 +23,7 @@ caption: HTML Native File System Saver
     Wiki file name (same as download saver if empty): <$edit-text tiddler="$:/plugins/slaymaker1907/browser-nativesaver/settings-data" field="wiki-file-name" />
 </$reveal>
 
-<$button onclick="window.indexedDB.deleteDatabase('QqiTNHy4qkN9TtIYbd5i');">
+<$button onclick="window.indexedDB.deleteDatabase('FileHandles-QqiTNHy4qkN9TtIYbd5i');">
 <$action-sendmessage $message="ns-reset-file-saver" />
 Reset file save location
 </$button>

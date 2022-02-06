@@ -590,7 +590,7 @@ class FileSystemSaver implements TWSaver {
     reset() {
         logDebug("Reseting file saver...");
         try {
-            window.indexedDB.deleteDatabase(UNIQUE_PLUGIN_ID);
+            window.indexedDB.deleteDatabase(DB_NAME);
         } catch(err) {
             logDebug("Failed to delete file save location: %o", err);
         }
