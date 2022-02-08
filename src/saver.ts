@@ -78,6 +78,7 @@ const ENABLE_SAVER_FIELD = "enable-saver?";
 const SAVER_STYLE_FIELD = "save-style";
 const ALLOW_INDEXED_DB_FIELD = "allow-indexedDB?";
 const WIKI_FILENAME_FIELD = "wiki-file-name";
+const SHOW_WELCOME_MODAL_FIELD = "show-welcome-modal?";
 const YES = "yes";
 const UNIQUE_PLUGIN_ID = "QqiTNHy4qkN9TtIYbd5i";
 const WELCOME_PAGE = "$:/plugins/slaymaker1907/browser-nativesaver/welcome";
@@ -622,8 +623,13 @@ const create = (wiki: TWWiki) => {
 
     // Wait one event cycle before trying to show the welcome page.
     window.setTimeout(() => {
-        const modal = (window as any).$tw.modal as TWModalManager;
-        modal.display(WELCOME_PAGE);
+        if (wiki.getTiddler(PLUGIN_SETTINGS_DATA)!.getFieldString(SHOW_WELCOME_MODAL_FIELD) === YES) {
+            logDebug("Showing welcome modal.");
+            const modal = (window as any).$tw.modal as TWModalManager;
+            modal.display(WELCOME_PAGE);
+        } else {
+            logDebug("Not showing welcome modal since it is not enabled.");
+        }
     }, 0);
 
     return result;

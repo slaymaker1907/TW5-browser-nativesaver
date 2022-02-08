@@ -4,3 +4,4 @@ enable-saver?: yes
 check-consistency?: yes
 allow-indexedDB?: no
 wiki-file-name:
+show-welcome-modal?: yes

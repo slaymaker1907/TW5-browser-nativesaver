@@ -8,6 +8,8 @@ caption: HTML Native File System Saver
 <$checkbox tiddler=<<nativeSaverSettings>> field="enable-saver?" checked="yes" unchecked="no"
     default="yes"> Enable saver?</$checkbox>
 
+<$checkbox tiddler=<<nativeSaverSettings>> field="show-welcome-modal?" checked="yes" unchecked="no" default="yes"> Show welcome modal?</$checkbox>
+
 <$checkbox tiddler=<<nativeSaverSettings>> field="enable-logging?" checked="yes" unchecked="no" default="no"> Enable debug logging?</$checkbox>
 
 <$checkbox tiddler=<<nativeSaverSettings>> field="allow-indexedDB?" checked="yes" unchecked="no" default="no"> Allow FS to use indexedDB? (some security issues since everything on file:// has the same origin)</$checkbox>
